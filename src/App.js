@@ -33,18 +33,14 @@ function formatDay(dateStr) {
 }
 
 class App extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      location: 'Lagos',
-      isLoading: false,
-      displayLocation: '',
-      weather: {},
-    };
-    this.fetchWeather = this.fetchWeather.bind(this);
-  }
+  state = {
+    location: 'Lagos',
+    isLoading: false,
+    displayLocation: '',
+    weather: {},
+  };
 
-  async fetchWeather() {
+  fetchWeather = async () => {
     try {
       this.setState({ isLoading: true });
       // 1) Getting location (geocoding)
@@ -53,7 +49,7 @@ class App extends React.Component {
       );
       const geoData = await geoRes.json();
 
-      // console.log(geoData);
+      console.log(geoData);
 
       if (!geoData.results) throw new Error('Location not found');
 
@@ -62,7 +58,7 @@ class App extends React.Component {
       this.setState({
         displayLocation: `${name} ${convertToFlag(country_code)}`,
       });
-
+      console.log(`${name} ${convertToFlag(country_code)}`);
       // 2) Getting actual weather
       const weatherRes = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&timezone=${timezone}&daily=weathercode,temperature_2m_max,temperature_2m_min`
@@ -75,19 +71,17 @@ class App extends React.Component {
     } finally {
       this.setState({ isLoading: false });
     }
-  }
+  };
+
+  setLocation = e => this.setState({ location: e.target.value });
   render() {
     return (
       <div className="app">
         <h1>Classy Weather</h1>
-        <div>
-          <input
-            type="text"
-            placeholder="Search for location... "
-            value={this.state.location}
-            onChange={e => this.setState({ location: e.target.value })}
-          />
-        </div>
+        <Input
+          location={this.state.location}
+          onChangeLocation={this.setLocation}
+        />
         <button onClick={this.fetchWeather}>Get weather</button>
         {this.state.isLoading && <p className="loader">Loading...</p>}
 
@@ -104,9 +98,24 @@ class App extends React.Component {
 
 export default App;
 
+class Input extends React.Component {
+  render() {
+    return (
+      <div>
+        <input
+          type="text"
+          placeholder="Search for location... "
+          value={this.props.location}
+          onChange={this.props.onChangeLocation}
+        />
+      </div>
+    );
+  }
+}
+
 class Weather extends React.Component {
   render() {
-    // console.log(this.props);
+    console.log(this.props);
     const {
       temperature_2m_max: max,
       temperature_2m_min: min,
