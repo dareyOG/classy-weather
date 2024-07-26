@@ -43,7 +43,7 @@ class App extends React.Component {
 
   fetchWeather = async () => {
     if (this.state.location.length < 2) {
-      this.setState({ weather: {}, error: 'no location' });
+      this.setState({ weather: {} });
     }
     try {
       this.setState({ isLoading: true });
@@ -53,7 +53,7 @@ class App extends React.Component {
       );
       const geoData = await geoRes.json();
 
-      console.log(geoData);
+      // console.log(geoData);
 
       if (!geoData.results) throw new Error('Location not found');
 
@@ -71,7 +71,7 @@ class App extends React.Component {
       const weatherData = await weatherRes.json();
       this.setState({ weather: weatherData.daily });
     } catch (err) {
-      console.error(err.message);
+      // console.error(err.message);
       return this.setState({ error: err.message });
     } finally {
       this.setState({ isLoading: false });
