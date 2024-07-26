@@ -34,13 +34,17 @@ function formatDay(dateStr) {
 
 class App extends React.Component {
   state = {
-    location: 'Lagos',
+    location: '',
     isLoading: false,
     displayLocation: '',
     weather: {},
+    error: '',
   };
 
   fetchWeather = async () => {
+    if (this.state.location.length < 2) {
+      this.setState({ weather: {}, error: 'no location' });
+    }
     try {
       this.setState({ isLoading: true });
       // 1) Getting location (geocoding)
@@ -53,12 +57,13 @@ class App extends React.Component {
 
       if (!geoData.results) throw new Error('Location not found');
 
+      this.setState({ error: '' });
+
       const { latitude, longitude, timezone, name, country_code } =
         geoData.results.at(0);
       this.setState({
         displayLocation: `${name} ${convertToFlag(country_code)}`,
       });
-      console.log(`${name} ${convertToFlag(country_code)}`);
       // 2) Getting actual weather
       const weatherRes = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&timezone=${timezone}&daily=weathercode,temperature_2m_max,temperature_2m_min`
@@ -66,14 +71,34 @@ class App extends React.Component {
       const weatherData = await weatherRes.json();
       this.setState({ weather: weatherData.daily });
     } catch (err) {
-      // console.error(err);
-      return err;
+      console.error(err.message);
+      return this.setState({ error: err.message });
     } finally {
       this.setState({ isLoading: false });
     }
   };
 
   setLocation = e => this.setState({ location: e.target.value });
+
+  componentDidMount() {
+    // this.fetchWeather();
+    this.setState({ location: localStorage.getItem('location') || '' });
+  }
+
+  componentDidUpdate(_prevProps, prevState) {
+    if (this.state.location !== prevState.location) {
+      this.fetchWeather();
+
+      localStorage.setItem('location', this.state.location);
+      console.log(this.state.location);
+    }
+  }
+
+  componentWillUnmount() {
+    if (!this.state.location) {
+      this.setState({ error: '' });
+    }
+  }
   render() {
     return (
       <div className="app">
@@ -82,15 +107,29 @@ class App extends React.Component {
           location={this.state.location}
           onChangeLocation={this.setLocation}
         />
-        <button onClick={this.fetchWeather}>Get weather</button>
-        {this.state.isLoading && <p className="loader">Loading...</p>}
+        {/* <button onClick={this.fetchWeather}>Get weather</button> */}
+        {/* {this.state.isLoading && <p className="loader">Loading...</p>}
+        {this.state.error && <p className="loader">{this.state.error}</p>} */}
 
-        {this.state.weather.weathercode && (
+        {this.state.isLoading ? (
+          <p className="loader">Loading...</p>
+        ) : this.state.error ? (
+          <p className="loader">{this.state.error}</p>
+        ) : (
+          this.state.weather.weathercode && (
+            <Weather
+              weather={this.state.weather}
+              location={this.state.displayLocation}
+            />
+          )
+        )}
+
+        {/* {this.state.weather.weathercode && (
           <Weather
             weather={this.state.weather}
             location={this.state.displayLocation}
           />
-        )}
+        )} */}
       </div>
     );
   }
@@ -114,8 +153,11 @@ class Input extends React.Component {
 }
 
 class Weather extends React.Component {
+  componentWillUnmount() {
+    // console.log('weather is unmounting');
+  }
   render() {
-    console.log(this.props);
+    // console.log(this.props);
     const {
       temperature_2m_max: max,
       temperature_2m_min: min,
